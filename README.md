@@ -174,6 +174,12 @@ resource "azurerm_virtual_network" "test_vnet_2" {
 }
 ```
 
+## Azure DevOps Pipeline Sequence Diagram
+
+The following sequence diagram illustrates the Azure DevOps pipeline used in this project:
+
+![Azure DevOps Pipeline](./docs/checkov-diagram-ados.png)
+
 ## Contributing
 
 Contributions are welcome! Please follow these steps:
