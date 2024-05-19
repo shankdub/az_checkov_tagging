@@ -1,5 +1,3 @@
----
-
 # az_checkov_tagging
 
 ## Overview
