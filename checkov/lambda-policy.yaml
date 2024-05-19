@@ -1,0 +1,12 @@
+---
+metadata:
+  name: "Lambda Memory <=2GB"
+  id: "CUSTOM_YAML"
+  category: "GENERAL_SECURITY"
+definition:
+  cond_type: attribute
+  resource_types:
+  - aws_lambda_function
+  attribute: memory_size
+  operator: less_than_or_equal
+  value: 2048

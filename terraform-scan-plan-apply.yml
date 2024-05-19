@@ -1,0 +1,240 @@
+# Azure DevOps pipeline for Azure deployment
+variables:
+- group: checkovtags
+
+trigger:
+  branches:
+    include:
+    - main
+
+stages:
+- stage: Validate
+  displayName: Validate
+  jobs:
+  - job: validate
+    pool:
+      vmImage: ubuntu-latest
+    steps:
+    # Install Checkov
+    - bash: pip3 install checkov
+      displayName: 'Install checkov'
+      name: 'install_checkov'
+    - task: TerraformInstaller@0
+      displayName: 'Terraform Install'
+      inputs:
+        terraformVersion: '1.0.7'
+    
+
+    ## Azure Key Vault
+    # Download Azure Key Vault secrets
+    # - task: AzureKeyVault@1
+    #   inputs:
+    #     ConnectedServiceName: $(service_name)
+    #     keyVaultName: $(key_vault_name)
+    #     secretsFilter: '*'
+    #     runAsPreJob: false # Azure DevOps Services only
+    
+    # Init
+    - task: TerraformTaskV2@2
+      displayName: 'Terraform Init'
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        backendServiceArm: $(service_name)
+        backendAzureRmResourceGroupName: 'azuredevops1'
+        backendAzureRmStorageAccountName: $(storageaccount)
+        backendAzureRmContainerName: '$(container-name)'
+        backendAzureRmKey: $(az_state_key)
+        workingDirectory: '$(System.DefaultWorkingDirectory)'
+
+  # Validate
+    - task: TerraformTaskV2@2
+      displayName: 'Terraform Validate'
+      inputs:
+        provider: 'azurerm'
+        command: 'validate'
+        backendServiceArm: $(service_name)
+        backendAzureRmResourceGroupName: 'azuredevops1'
+        backendAzureRmStorageAccountName: $(storageaccount)
+        backendAzureRmContainerName: '$(container-name)'
+        backendAzureRmKey: $(az_state_key)
+        workingDirectory: '$(System.DefaultWorkingDirectory)'
+
+  # Verify module files with Checkov
+    - bash: checkov --directory $(System.DefaultWorkingDirectory) --external-checks-dir $(System.DefaultWorkingDirectory)/checkov -o junitxml > $(System.DefaultWorkingDirectory)/Checkov-Tagging-Report.xml
+      displayName: 'Verify modules with Checkov'
+      name: 'checkov_module_check'
+
+  # Publish test results for modules
+    - task: PublishTestResults@2
+      displayName: Publish Checkov Module Test Results
+      condition: succeededOrFailed()
+      inputs:
+        testResultsFormat: 'JUnit'
+        testResultsFiles: '**/*Checkov-Tagging-Report.xml'
+        searchFolder: '$(System.DefaultWorkingDirectory)'
+        mergeTestResults: false
+        testRunTitle: Checkov Tagging Scan
+        failTaskOnFailedTests: false
+        publishRunAttachments: true
+
+  # Verify main files with Checkov
+    - bash: checkov --directory $(System.DefaultWorkingDirectory) --external-checks-dir $(System.DefaultWorkingDirectory)/checkov -o junitxml > $(System.DefaultWorkingDirectory)/Checkov-RootModule-Report.xml
+      displayName: 'Verify root module with Checkov'
+      name: 'checkov_root_check'
+
+  # Publish test results for root module
+    - task: PublishTestResults@2
+      displayName: Publish Checkov Root Test Results
+      condition: succeededOrFailed()
+      inputs:
+        testResultsFormat: 'JUnit'
+        testResultsFiles: '**/*Checkov-Root-Report.xml'
+        searchFolder: '$(System.DefaultWorkingDirectory)'
+        mergeTestResults: false
+        testRunTitle: Checkov Root Scan
+        failTaskOnFailedTests: false
+        publishRunAttachments: true
+    
+- stage: Plan
+  displayName: Plan
+  jobs:
+  - job: plan
+    pool:
+      vmImage: ubuntu-latest
+    steps:
+    # Install Checkov
+    - bash: pip3 install checkov
+      displayName: 'Install checkov'
+      name: 'install_checkov'
+
+    # # Azure Key Vault
+    # # Download Azure Key Vault secrets
+    # - task: AzureKeyVault@1
+    #   inputs:
+    #     ConnectedServiceName: $(service_name)
+    #     keyVaultName: $(key_vault_name)
+    #     secretsFilter: '*'
+    #     runAsPreJob: false # Azure DevOps Services only
+  
+    # Init
+    - task: TerraformTaskV2@2
+      displayName: 'Terraform Init'
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        backendServiceArm: $(service_name)
+        backendAzureRmResourceGroupName: 'azuredevops1'
+        backendAzureRmStorageAccountName: $(storageaccount)
+        backendAzureRmContainerName: '$(container-name)'
+        backendAzureRmKey: $(az_state_key)
+        workingDirectory: '$(System.DefaultWorkingDirectory)'
+
+  # Plan
+    - task: TerraformTaskV2@2
+      displayName: 'Terraform Plan'
+      inputs:
+        provider: 'azurerm'
+        command: 'plan'
+        environmentServiceNameAzureRM: $(service_name)
+        backendServiceArm: $(service_name)
+        backendAzureRmResourceGroupName: 'azuredevops1'
+        backendAzureRmStorageAccountName: $(storageaccount)
+        backendAzureRmContainerName: '$(container-name)'
+        backendAzureRmKey: $(az_state_key)
+        workingDirectory: '$(System.DefaultWorkingDirectory)'
+        commandOptions: '-out=$(System.DefaultWorkingDirectory)/main.tfplan'
+        publishPlanResults: 'Terraform Plan'
+
+  # Verify plan with Checkov
+    - bash: |
+        cd $(System.DefaultWorkingDirectory)
+        ls
+        terraform show -json main.tfplan > $(System.DefaultWorkingDirectory)/main.json
+        checkov -f $(System.DefaultWorkingDirectory)/main.json --external-checks-dir $(System.DefaultWorkingDirectory)/checkov -o junitxml > $(System.DefaultWorkingDirectory)/Checkov-Plan-Report.xml
+      displayName: 'Verify plan with Checkov'
+      name: 'checkov_plan_check'
+      env:
+        #ARM_SAS_TOKEN: $(sas-token)
+        ARM_CLIENT_ID: $(az-client-id)
+        ARM_CLIENT_SECRET: $(az-client-secret)
+        ARM_SUBSCRIPTION_ID: $(az-subscription)
+        ARM_TENANT_ID: $(az-tenant)
+
+  # Publish test results for plan
+    - task: PublishTestResults@2
+      displayName: Publish Checkov Plan Test Results
+      condition: succeededOrFailed()
+      inputs:
+        testResultsFormat: 'JUnit'
+        testResultsFiles: '**/*Checkov-Plan-Report.xml'
+        searchFolder: '$(System.DefaultWorkingDirectory)'
+        mergeTestResults: false
+        testRunTitle: Checkov Plan Scan
+        failTaskOnFailedTests: false
+        publishRunAttachments: true
+
+# Approve
+- stage: Approve
+  displayName: Approve
+  jobs:
+  - job: approve
+    displayName: Wait for approval
+    pool: server
+    steps: 
+    - task: ManualValidation@0
+      timeoutInMinutes: 60
+      inputs:
+        notifyUsers: 'Robertgonzalez@shankdubmusic.onmicrosoft.com'
+        instructions: 'Review the plan in the next hour'
+
+- stage: Apply
+  displayName: Apply
+  jobs:
+  - job: apply
+    pool:
+      vmImage: ubuntu-latest
+    steps:
+
+    # # Azure Key Vault
+    # # Download Azure Key Vault secrets
+    # - task: AzureKeyVault@1
+    #   inputs:
+    #     ConnectedServiceName: $(service_name)
+    #     keyVaultName: $(key_vault_name)
+    #     secretsFilter: '*'
+    #     runAsPreJob: false # Azure DevOps Services only
+
+  # Init
+    - task: TerraformTaskV2@2
+      displayName: 'Terraform Init'
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        backendServiceArm: $(service_name)
+        backendAzureRmResourceGroupName: 'azuredevops1'
+        backendAzureRmStorageAccountName: $(storageaccount)
+        backendAzureRmContainerName: '$(container-name)'
+        backendAzureRmKey: $(az_state_key)
+        workingDirectory: '$(System.DefaultWorkingDirectory)'
+
+  # Apply
+    - task: TerraformTaskV2@2
+      displayName: 'Terraform Apply'
+      inputs:
+        provider: 'azurerm'
+        command: 'apply'
+        environmentServiceNameAzureRM: $(service_name)
+        backendServiceArm: $(service_name)
+        backendAzureRmResourceGroupName: 'azuredevops1'
+        backendAzureRmStorageAccountName: $(storageaccount)
+        backendAzureRmContainerName: '$(container-name)'
+        backendAzureRmKey: $(az_state_key)
+        workingDirectory: '$(System.DefaultWorkingDirectory)'
+        commandOptions: '-auto-approve'
+
+
+
+
+
+
