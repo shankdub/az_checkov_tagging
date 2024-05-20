@@ -1,8 +1,8 @@
-# az_checkov_tagging
+# az_tf_checkov_tagging
 
 ## Overview
 
-`az_checkov_tagging` is a Terraform-based project aimed at managing and enforcing Azure resource tagging policies using Checkov, a static code analysis tool for infrastructure-as-code (IaC). This project helps ensure that all Azure resources are appropriately tagged, which is crucial for resource management, billing, and compliance.
+`az_tf_checkov_tagging` is a Terraform-based project aimed at managing and enforcing Azure resource tagging policies using Checkov, a static code analysis tool for infrastructure-as-code (IaC). This project helps ensure that all Azure resources are appropriately tagged, which is crucial for resource management, billing, and compliance.
 
 ## Features
 
@@ -30,8 +30,8 @@
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/shankdub/az_checkov_tagging.git
-   cd az_checkov_tagging
+   git clone https://github.com/shankdub/az_tf_checkov_tagging.git
+   cd az_tf_checkov_tagging
    ```
 
 2. Initialize Terraform:
