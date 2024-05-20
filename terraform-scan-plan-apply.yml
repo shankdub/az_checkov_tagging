@@ -41,9 +41,9 @@ stages:
         backendServiceArm: $(service_name)
         backendAzureRmResourceGroupName: $(resourcegroup-name)
         backendAzureRmStorageAccountName: $(storageaccount)
-        backendAzureRmContainerName: '$(container-name)'
+        backendAzureRmContainerName: $(container-name)
         backendAzureRmKey: $(az_state_key)
-        workingDirectory: '$(System.DefaultWorkingDirectory)'
+        workingDirectory: $(System.DefaultWorkingDirectory)
 
   # Validate
     - task: TerraformTaskV2@2
@@ -54,9 +54,9 @@ stages:
         backendServiceArm: $(service_name)
         backendAzureRmResourceGroupName: $(resourcegroup-name)
         backendAzureRmStorageAccountName: $(storageaccount)
-        backendAzureRmContainerName: '$(container-name)'
+        backendAzureRmContainerName: $(container-name)
         backendAzureRmKey: $(az_state_key)
-        workingDirectory: '$(System.DefaultWorkingDirectory)'
+        workingDirectory: $(System.DefaultWorkingDirectory)
 
   # Verify module files with Checkov
     - bash: checkov --directory $(System.DefaultWorkingDirectory) --external-checks-dir $(System.DefaultWorkingDirectory)/checkov -o junitxml > $(System.DefaultWorkingDirectory)/Checkov-Tagging-Report.xml
@@ -115,9 +115,9 @@ stages:
         backendServiceArm: $(service_name)
         backendAzureRmResourceGroupName: $(resourcegroup-name)
         backendAzureRmStorageAccountName: $(storageaccount)
-        backendAzureRmContainerName: '$(container-name)'
+        backendAzureRmContainerName: $(container-name)
         backendAzureRmKey: $(az_state_key)
-        workingDirectory: '$(System.DefaultWorkingDirectory)'
+        workingDirectory: $(System.DefaultWorkingDirectory)
 
   # Plan
     - task: TerraformTaskV2@2
@@ -125,14 +125,14 @@ stages:
       inputs:
         provider: 'azurerm'
         command: 'plan'
+        environmentServiceNameAzureRM: $(service_name)
         backendServiceArm: $(service_name)
         backendAzureRmResourceGroupName: $(resourcegroup-name)
         backendAzureRmStorageAccountName: $(storageaccount)
-        backendAzureRmContainerName: '$(container-name)'
+        backendAzureRmContainerName: $(container-name)
         backendAzureRmKey: $(az_state_key)
-        workingDirectory: '$(System.DefaultWorkingDirectory)'
+        workingDirectory: $(System.DefaultWorkingDirectory)
         commandOptions: '-out=$(System.DefaultWorkingDirectory)/main.tfplan'
-        publishPlanResults: 'Terraform Plan'
 
   # Verify plan with Checkov
     - bash: |
@@ -188,12 +188,13 @@ stages:
       inputs:
         provider: 'azurerm'
         command: 'init'
+        environmentServiceNameAzureRM: $(service_name)
         backendServiceArm: $(service_name)
         backendAzureRmResourceGroupName: $(resourcegroup-name)
         backendAzureRmStorageAccountName: $(storageaccount)
-        backendAzureRmContainerName: '$(container-name)'
+        backendAzureRmContainerName: $(container-name)
         backendAzureRmKey: $(az_state_key)
-        workingDirectory: '$(System.DefaultWorkingDirectory)'
+        workingDirectory: $(System.DefaultWorkingDirectory)
 
   # Apply
     - task: TerraformTaskV2@2
@@ -201,14 +202,21 @@ stages:
       inputs:
         provider: 'azurerm'
         command: 'apply'
-
         backendServiceArm: $(service_name)
+        environmentServiceNameAzureRM: $(service_name)
         backendAzureRmResourceGroupName: $(resourcegroup-name)
         backendAzureRmStorageAccountName: $(storageaccount)
-        backendAzureRmContainerName: '$(container-name)'
+        backendAzureRmContainerName: $(container-name)
         backendAzureRmKey: $(az_state_key)
-        workingDirectory: '$(System.DefaultWorkingDirectory)'
+        workingDirectory: $(System.DefaultWorkingDirectory)
         commandOptions: '-auto-approve'
+
+
+
+
+
+
+
 
 
 
