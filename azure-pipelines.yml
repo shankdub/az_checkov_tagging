@@ -115,7 +115,7 @@ stages:
         backendServiceArm: $(service_name)
         backendAzureRmResourceGroupName: $(resourcegroup-name)
         backendAzureRmStorageAccountName: $(storageaccount)
-        backendAzureRmContainerName: '$(container-name)'
+        backendAzureRmContainerName: $(container-name)
         backendAzureRmKey: $(az_state_key)
         workingDirectory: $(System.DefaultWorkingDirectory)
 
@@ -133,7 +133,7 @@ stages:
         backendAzureRmKey: $(az_state_key)
         workingDirectory: $(System.DefaultWorkingDirectory)
         commandOptions: '-out=$(System.DefaultWorkingDirectory)/main.tfplan'
-        publishPlanResults: 'Terraform Plan'
+#        publishPlanResults: 'Terraform Plan'
 
 #   # Verify plan with Checkov
 #     - bash: |
@@ -203,8 +203,8 @@ stages:
       inputs:
         provider: 'azurerm'
         command: 'apply'
-
         backendServiceArm: $(service_name)
+        environmentServiceNameAzureRM: $(service_name)
         backendAzureRmResourceGroupName: $(resourcegroup-name)
         backendAzureRmStorageAccountName: $(storageaccount)
         backendAzureRmContainerName: $(container-name)
