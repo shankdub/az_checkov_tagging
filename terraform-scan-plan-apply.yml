@@ -2,10 +2,18 @@
 variables:
 - group: checkovtags
 
+# specific path build
 trigger:
   branches:
     include:
     - main
+  paths:
+    include:
+    - '*'
+    exclude:
+    - '/*.yml'
+    - '/*.yaml'
+    - '/*.md'
 
 stages:
 - stage: Validate
@@ -23,16 +31,6 @@ stages:
       displayName: 'Terraform Install'
       inputs:
         terraformVersion: '1.0.7'
-    
-
-    ## Azure Key Vault
-    # Download Azure Key Vault secrets
-    # - task: AzureKeyVault@1
-    #   inputs:
-    #     ConnectedServiceName: $(service_name)
-    #     keyVaultName: $(key_vault_name)
-    #     secretsFilter: '*'
-    #     runAsPreJob: false # Azure DevOps Services only
     
     # Init
     - task: TerraformTaskV2@2
@@ -107,15 +105,6 @@ stages:
     - bash: pip3 install checkov
       displayName: 'Install checkov'
       name: 'install_checkov'
-
-    # # Azure Key Vault
-    # # Download Azure Key Vault secrets
-    # - task: AzureKeyVault@1
-    #   inputs:
-    #     ConnectedServiceName: $(service_name)
-    #     keyVaultName: $(key_vault_name)
-    #     secretsFilter: '*'
-    #     runAsPreJob: false # Azure DevOps Services only
   
     # Init
     - task: TerraformTaskV2@2
