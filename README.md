@@ -197,6 +197,3 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 For any questions or suggestions, please open an issue or reach out to 
 
----
-
-This README now accurately reflects the use of an Azure DevOps pipeline for the deployment process. Feel free to customize it further based on additional details or specific requirements.
